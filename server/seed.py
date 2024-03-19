@@ -1,25 +1,31 @@
-#!/usr/bin/env python3
-
-from random import choice as rc
-
+from random import randint
+from faker import Faker
 from app import app
 from models import db, Bakery, BakedGood
 
-with app.app_context():
+fake = Faker()
 
+with app.app_context():
+    db.drop_all()
+    db.create_all()
+
+    print("Seeding database ...")
     BakedGood.query.delete()
     Bakery.query.delete()
-    
-    bakeries = []
-    bakeries.append(Bakery(name='Delightful donuts'));
-    bakeries.append(Bakery(name='Incredible crullers'));
+
+    # Generate bakeries
+    bakery_names = ['Sweet Treats Bakery', 'Delicious Delights', 'Bakery Bliss', 'The Pastry Shop', 'Gourmet Bakery']
+    bakeries = [Bakery(name=name) for name in bakery_names]
     db.session.add_all(bakeries)
-
-    baked_goods = []
-    baked_goods.append(BakedGood(name='Chocolate dipped donut', price=2.75, bakery=bakeries[0]));
-    baked_goods.append(BakedGood(name='Apple-spice filled donut', price=3.50, bakery=bakeries[0]));
-    baked_goods.append(BakedGood(name='Glazed honey cruller', price=3.25, bakery=bakeries[1]));
-    baked_goods.append(BakedGood(name='Chocolate cruller', price=3.40, bakery=bakeries[1]));
-
-    db.session.add_all(baked_goods)
     db.session.commit()
+
+    # Generate baked goods
+    for bakery in bakeries:
+        for _ in range(3):  # Let's keep 3 baked goods per bakery
+            name = fake.word().capitalize()
+            price = round(randint(100, 1000) / 100, 2)  # Random price between 1.00 and 10.00
+            baked_good = BakedGood(name=name, price=price, bakery=bakery)
+            db.session.add(baked_good)
+    db.session.commit()
+
+    print("Database seeded successfully!")
